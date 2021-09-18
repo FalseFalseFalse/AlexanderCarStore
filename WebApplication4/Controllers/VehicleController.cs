@@ -12,20 +12,43 @@ namespace WebApplication4.Controllers
     [Route("[controller]")]
     public class VehicleController : ControllerBase
     {
-        private readonly ILogger<VehicleController> _logger;
         private readonly IVehicleProcessing _vehicleProcessing;
 
-        public VehicleController(ILogger<VehicleController> logger, IVehicleProcessing vehicleProcessing)
+        public VehicleController(IVehicleProcessing vehicleProcessing)
         {
-            _logger = logger;
             _vehicleProcessing = vehicleProcessing;
         }
 
         [HttpPost]
-        [Route("SetVehicle")] 
-        public IEnumerable<VehicleResult> SetVehicle([FromBody] VehicleParams vehicleParams)
+        [Route("InsertVehicle")]
+        public VehicleResult InsertVehicle([FromBody] VehicleParams vehicleParams)
         {
-            var result = _vehicleProcessing.SetVehicleInfo(vehicleParams);
+            var result = _vehicleProcessing.InsertVehicleInfo(vehicleParams);
+
+            return
+                new VehicleResult()
+                {
+                    Guid = result.Guid,
+                    VehicleType = result.VehicleType,
+                    Marque = result.Marque,
+                    Engine = result.Engine,
+                    Model = result.Model,
+                    DatePurchase = result.DatePurchase,
+                    DateInsert = result.DateInsert,
+                    DateUpdate = result.DateUpdate,
+                    Price = result.Price,
+                    TopSpeedMph = result.TopSpeedMph,
+                    CostUsd = result.CostUsd,
+                    EnginePowerBhp = result.EnginePowerBhp,
+                    Status = result.Status
+                };
+        }
+
+        [HttpPut]
+        [Route("UpdateVehicle")]
+        public IEnumerable<VehicleResult> UpdateVehicle([FromBody] VehicleParamsExtend vehicleParams)
+        {
+            var result = _vehicleProcessing.UpdateVehicleInfo(vehicleParams);
 
             return new VehicleResult[]
             {
@@ -42,13 +65,14 @@ namespace WebApplication4.Controllers
                     Price = result.Price,
                     TopSpeedMph = result.TopSpeedMph,
                     CostUsd = result.CostUsd,
-                    EnginePowerBhp = result.EnginePowerBhp
+                    EnginePowerBhp = result.EnginePowerBhp,
+                    Status = result.Status
                 }
             }.ToList();
         }
 
-        [HttpPost]
-        [Route("GetVehicle")] 
+        [HttpGet]
+        [Route("GetVehicle")]
         public IEnumerable<VehicleResult> GetVehicle(Guid guid)
         {
             var result = _vehicleProcessing.GetVehicleInfo(guid);
@@ -74,8 +98,8 @@ namespace WebApplication4.Controllers
             }.ToList();
         }
 
-        [HttpPost]
-        [Route("GetRandomReversVehicle")] 
+        [HttpGet]
+        [Route("GetRandomReversVehicle")]
         public IEnumerable<VehicleResult> GetRandomReverseVehicle()
         {
             var result = _vehicleProcessing.GetRandomReverseVehicleInfo();
@@ -101,9 +125,9 @@ namespace WebApplication4.Controllers
             }.ToList();
         }
 
-        [HttpPost]
-        [Route("FindVehicle")] 
-        public IEnumerable<VehicleResult> FindVehicle([FromBody] FindVehicleParams vehicleParams)
+        [HttpGet]
+        [Route("FindVehicle")]
+        public IEnumerable<VehicleResult> FindVehicle(FindVehicleParams vehicleParams)
         {
             var result = _vehicleProcessing.FindVehicle(vehicleParams);
 

@@ -13,24 +13,8 @@ namespace Core.Handlers
 
         public VehicleProcessing(NpgsqlConnection connection)
         {
-            String str;
-            str = "do\n" +
-                "$$\n" +
-                "begin\n" +
-                "if not exists (select 1 from pg_database where datname = 'postgres') then create database AlexandrStore; end if;\n" +
-                "end;\n" +
-                "$$";
             _connection = connection;
             _connection.Open();
-
-            NpgsqlCommand myCommand = new NpgsqlCommand(str, _connection);
-            try
-            {
-                var reader = myCommand.ExecuteNonQuery();
-            }
-            catch (System.Exception ex)
-            {
-            }
         }
 
         public void Dispose()
@@ -101,11 +85,57 @@ namespace Core.Handlers
                 result.DateUpdate = (DateTime)reader[12];
             }
 
+            return result;
+        }
+
+        public VehicleResult InsertVehicleInfo(VehicleParams vehicleParams)
+        {
+            var result = new VehicleResult();
+
+            var query = $"select store.set_vehicles_info('{vehicleParams.VehicleType}'::varchar, '{vehicleParams.Marque}'::varchar, '{vehicleParams.Model}'::varchar," +
+                $" '{vehicleParams.Engine}'::varchar, {vehicleParams.EnginePowerBhp}, {vehicleParams.TopSpeedMph}, '{vehicleParams.DatePurchase}'::timestamp, " +
+                $"{vehicleParams.CostUsd}, {vehicleParams.Price}, '{vehicleParams.Status}');";
+
+            NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
+            try
+            {
+                using var reader = myCommand.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    result = GetResultFromReader(reader);
+                }
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Error while inserting");
+            };
 
             return result;
         }
 
-        public VehicleResult SetVehicleInfo(VehicleParams vehicleParams)
+        private VehicleResult GetResultFromReader(NpgsqlDataReader reader)
+        {
+            var result = new VehicleResult();
+            var values = reader.GetFieldValue<object[]>(0);
+            result.Guid = Guid.Parse(values[0].ToString());
+            result.VehicleType = values[1].ToString();
+            result.Marque = values[2].ToString();
+            result.Model = values[3].ToString();
+            result.Engine = values[4].ToString();
+            result.EnginePowerBhp = (int)values[5];
+            result.TopSpeedMph = (int)values[6];
+            result.CostUsd = (decimal)values[7];
+            result.Price = (decimal)values[8];
+            result.Status = values[9].ToString();
+            result.DateInsert = (DateTime)values[10];
+            result.DateUpdate = (DateTime)values[11];
+            result.DatePurchase = (DateTime)values[12];
+
+            return result;
+        }
+
+        public VehicleResult UpdateVehicleInfo(VehicleParamsExtend vehicleParams)
         {
             var result = new VehicleResult();
 
@@ -117,25 +147,10 @@ namespace Core.Handlers
             try
             {
                 using var reader = myCommand.ExecuteReader();
-                const int FieldCount = 1;
-                var readerResult = new object[FieldCount];
 
                 if (reader.Read())
                 {
-                    var values = reader.GetFieldValue<object[]>(0);
-                    result.Guid = Guid.Parse(values[0].ToString());
-                    result.VehicleType = values[1].ToString();
-                    result.Marque = values[2].ToString();
-                    result.Model = values[3].ToString();
-                    result.Engine = values[4].ToString();
-                    result.EnginePowerBhp = (int)values[5];
-                    result.TopSpeedMph = (int)values[6];
-                    result.CostUsd = (decimal)values[7];
-                    result.Price = (decimal)values[8];
-                    result.Status = values[9].ToString();
-                    result.DateInsert = (DateTime)values[10];
-                    result.DateUpdate = (DateTime)values[11];
-                    result.DatePurchase = (DateTime)values[12];
+                    result = GetResultFromReader(reader);
                 }
             }
             catch (Exception ex)
@@ -169,22 +184,7 @@ namespace Core.Handlers
 
             while (reader.Read())
             {
-                result.Add(new VehicleResult
-                {
-                    Guid = Guid.Parse(reader[0].ToString()),
-                    VehicleType = reader[1].ToString(),
-                    Marque = reader[2].ToString(),
-                    Model = reader[3].ToString(),
-                    Engine = reader[4].ToString(),
-                    EnginePowerBhp = (int)reader[5],
-                    TopSpeedMph = (int)reader[6],
-                    CostUsd = (decimal)reader[7],
-                    Price = (decimal)reader[8],
-                    Status = reader[9].ToString(),
-                    DatePurchase = (DateTime)reader[10],
-                    DateInsert = (DateTime)reader[11],
-                    DateUpdate = (DateTime)reader[12]
-                });
+                result.Add(GetResultFromReader(reader));
             }
             return result;
         }
@@ -224,5 +224,24 @@ namespace Core.Handlers
             else
                 return $" where {filter} ilike '{value}'";
         }
+
+        public void NullifyRandomPrice()
+        {
+            //var connection = new NpgsqlConnection();
+            var query = $"select store.nullify_price();";
+            //NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
+            NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
+            try
+            {
+                myCommand.ExecuteNonQuery();
+            }
+            catch
+            {
+                Console.WriteLine("Error while doing some jobs");
+            }
+
+        }
+
+
     }
 }

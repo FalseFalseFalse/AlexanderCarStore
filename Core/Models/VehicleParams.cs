@@ -4,7 +4,6 @@ namespace Core.Models
 {
     public class VehicleParams
     {
-        public virtual Guid? Guid { get; set; }
         public string VehicleType { get; set; }
         public string Marque { get; set; }
         public string Model { get; set; }

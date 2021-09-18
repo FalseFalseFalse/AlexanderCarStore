@@ -16,28 +16,28 @@ namespace WebApplication4.Controllers
             _statisticHandler = statisticHandler;
         }
 
-        [HttpPost]
+        [HttpGet]
         [Route("Types")]
         public IEnumerable<TypeStatistic> GetStatisticOnTypes()
         {
             return _statisticHandler.GetStatisticOnTypes();
         }
 
-        [HttpPost]
+        [HttpGet]
         [Route("Statuses")]
         public IEnumerable<StatusStatistic> GetStatisticOnStatuses()
         {
             return _statisticHandler.GetStatisticOnStatuses();
         }
 
-        [HttpPost]
+        [HttpGet]
         [Route("Marques")]
         public IEnumerable<MarqueStatistic> GetStatisticOnMarques()
         {
             return _statisticHandler.GetStatisticOnMarques();
         }
 
-        [HttpPost]
+        [HttpGet]
         [Route("GeneralStatistic")]
         public GeneralStatistic GetGeneralStatistic()
         {

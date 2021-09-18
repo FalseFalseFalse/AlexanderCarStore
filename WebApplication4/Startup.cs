@@ -1,5 +1,6 @@
 using Core.Handlers;
 using Core.Interfaces;
+using Core.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +20,6 @@ namespace WebApplication4
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
@@ -30,10 +30,9 @@ namespace WebApplication4
 
             services.AddSingleton<IVehicleProcessing, VehicleProcessing>();
             services.AddSingleton<IStatistic, StatisticHandler>();
-            services.AddSingleton(new NpgsqlConnection(Configuration.GetConnectionString("PostgreSql")));
+            services.AddSingleton(new NpgsqlConnection(Configuration.GetConnectionString("PostgreSql")));        
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -47,7 +46,7 @@ namespace WebApplication4
             app.UseHttpsRedirection();
 
             app.UseRouting();
-
+            VehicleScheduler.Start(app.ApplicationServices.GetService<IVehicleProcessing>());
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

@@ -1,0 +1,270 @@
+TABLES
+
+CREATE TABLE store.t_engines
+(
+    id integer NOT NULL DEFAULT nextval('store.t_engines_id_seq'::regclass),
+    engine character varying(100) COLLATE pg_catalog."default",
+    engine_power integer,
+    CONSTRAINT t_engines_pkey PRIMARY KEY (id)
+);
+CREATE UNIQUE INDEX ix_t_engines_engine_power_engine ON store.t_engines USING btree (engine, engine_power);
+
+CREATE TABLE store.t_machines
+(
+    id integer NOT NULL DEFAULT nextval('store.t_machines_id_seq'::regclass),
+    marque character varying COLLATE pg_catalog."default",
+    model character varying COLLATE pg_catalog."default",
+    CONSTRAINT t_machines_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE store.t_status
+(
+    id integer NOT NULL DEFAULT nextval('store.t_status_id_seq'::regclass),
+    status character varying COLLATE pg_catalog."default",
+    CONSTRAINT t_status_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE store.t_vehicle_type
+(
+    id integer NOT NULL DEFAULT nextval('store.t_vehicle_type_id_seq'::regclass),
+    type character varying(50) COLLATE pg_catalog."default",
+    CONSTRAINT t_vehicle_type_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE store.t_machines_info
+(
+    guid uuid NOT NULL,
+    id_machine integer,
+    max_speed integer,
+    id_engine integer,
+    id_vehicle_type integer,
+    id_status integer,
+    date_insert timestamp without time zone,
+    date_update timestamp without time zone,
+    CONSTRAINT t_machines_info_pkey PRIMARY KEY (guid)
+);
+
+CREATE TABLE store.t_purchases
+(
+    id integer NOT NULL DEFAULT nextval('store.t_purchases_id_seq'::regclass),
+    cost_usd numeric,
+    price numeric,
+    date_purchase timestamp without time zone,
+    auto_guid uuid,
+    CONSTRAINT t_purchases_pkey PRIMARY KEY (id)
+);
+
+FUNCTIONS
+
+create or replace function store.nullify_price() returns void
+LANGUAGE plpgsql SECURITY DEFINER
+  AS $$
+declare
+  _guid uuid;
+begin
+ select auto_guid into _guid from store.t_purchases where price <> 0 order by random() limit 1;
+ update store.t_purchases set c_price = 0 where auto_guid = _guid;
+end
+$$;
+
+create or replace function store.set_purchase(
+  _guid uuid, 
+  inout _cost_usd numeric default null,
+  inout _price numeric default null,
+  inout _date_purchase timestamp default null
+) returns record
+LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+begin
+  if not exists (select 1 from store.t_purchases p where p.auto_guid = _guid) then
+    insert into store.t_purchases(auto_guid, cost_usd, price, date_purchase) 
+    values (_guid, _cost_usd, _price, coalesce(_date_purchase, now()))
+    returning cost_usd, price, date_purchase 
+    into _cost_usd, _price, _date_purchase;
+  else
+    update store.t_purchases set 
+        cost_usd = _cost_usd, 
+        price = _price, 
+        date_purchase = coalesce(_date_purchase, now())
+    where auto_guid = _guid
+    returning cost_usd, price, date_purchase 
+    into _cost_usd, _price, _date_purchase;
+  end if;
+end
+$$;
+
+create or replace function store.set_vehicle_type(inout _vehicle_type varchar, out _id int) returns record
+LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+begin
+  if not exists (select 1 from store.t_vehicle_type vt where vt.type = _vehicle_type) then
+    insert into store.t_vehicle_type(type) values (_vehicle_type) returning id, type into _id, _vehicle_type;-- into _vehicle_type_id;
+  else
+    select id, type into _id, _vehicle_type from store.t_vehicle_type where type = _vehicle_type;
+  end if;
+end
+$$;
+
+create or replace function store.set_status(inout _status varchar, out _id int) returns record
+LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+begin
+  if not exists (select 1 from store.t_status s where s.status = _status) then
+    insert into store.t_status(status) values (_status) returning id, status into _id, _status;
+  else
+    select id, status into _id, _status from store.t_status where status = _status;
+  end if;
+end
+$$;
+
+create or replace function store.set_engine(inout _engine varchar, inout _engine_power int, out _id int) returns record
+LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+begin
+  if not exists (select 1 from store.t_engines e where e.engine = _engine) then
+    insert into store.t_engines(engine, engine_power) values (_engine, _engine_power) returning id, engine, engine_power into _id, _engine, _engine_power;
+  else
+    update store.t_engines set engine_power = _engine_power
+    where engine = _engine returning id, engine, engine_power into _id, _engine, _engine_power;
+  end if;
+end
+$$;
+
+create or replace function store.set_machine(inout _marque varchar, inout _model varchar, out _id int) returns record
+LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+begin
+  if not exists (select 1 from store.t_machines m where m.marque = _marque and m.model = _model) then
+    insert into store.t_machines(marque, model) values (_marque, _model) returning id, marque, model into _id, _marque, _model;
+  else
+    select id, marque, model into  _id, _marque, _model from store.t_machines m where m.marque = _marque and m.model = _model;
+  end if;
+end
+$$;
+
+create or replace function store.set_vehicles_info(
+    p_vehicle_type varchar, 
+    p_marque varchar, 
+    p_model varchar, 
+    p_engine varchar, 
+    p_engine_power int,
+  p_top_speed int, 
+    p_date_purchase timestamp, 
+    p_cost_usd numeric, 
+    p_price numeric,
+  p_status varchar, 
+    p_guid uuid default null)
+returns record
+LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+declare
+  _vehicle_info record;
+  _status_info record;
+  _engine_info record;
+  _marque_info record;
+  _purchase_info record;
+  _result record;
+  _guid uuid;
+  _date_insert timestamp;
+  _date_update timestamp;
+begin
+  select _id, _vehicle_type into _vehicle_info from store.set_vehicle_type(p_vehicle_type);
+  select _id, _status into _status_info from store.set_status(p_status);
+  select _id, _engine, _engine_power into _engine_info from store.set_engine(p_engine, p_engine_power);
+  select _id, _marque, _model into _marque_info from store.set_machine(p_marque, p_model);
+
+  if p_guid is null then
+    insert into store.t_machines_info(c_guid, id_machine, c_max_speed, id_engine, id_vehicle_type, id_status, c_date_insert, c_date_update)
+        values (uuid_generate_v4(), _marque_info._id, p_top_speed, _engine_info._id, _vehicle_info._id, _status_info._id, now(), null) 
+    returning store.t_machines_info.c_guid, store.t_machines_info.c_date_insert into _guid, _date_insert;
+  else
+        if not exists (select 1 from store.t_machines_info mi where mi.c_guid = p_guid) then
+        RAISE EXCEPTION 'Несуществующий p_guid --> %', p_guid
+      USING HINT = 'Проверьте вводимые данные';
+        else
+      update store.t_machines_info mi set id_machine = _marque_info._id, c_max_speed = p_top_speed, id_engine = _engine_info._id, 
+      id_vehicle_type = _vehicle_info._id, id_status = _status_info._id, c_date_update = now() where mi.c_guid = p_guid 
+      returning mi.c_guid, mi.c_date_insert, mi.c_date_update into _guid, _date_insert, _date_update;
+        end if;
+  end if;
+  
+  select _cost_usd, _price, _date_purchase into _purchase_info 
+  from store.set_purchase(_guid, coalesce(p_cost_usd, 0), coalesce(p_price, 0), p_date_purchase);
+  
+  select _guid::uuid as c_guid, _vehicle_info._vehicle_type::varchar as c_vehicle_type, _marque_info._marque::varchar as c_marque,
+    _marque_info._model as c_model, _engine_info._engine as c_engine, _engine_info._engine_power as c_engine_power,
+    p_top_speed as c_top_speed, _purchase_info._cost_usd as c_cost_usd, _purchase_info._price as c_price, _status_info._status as c_status,
+      _date_insert as c_date_insert, coalesce(_date_update, now()) as c_date_update, _purchase_info._date_purchase as c_date_purchase into _result;
+  return _result;
+end;
+$$;
+ 
+create or replace function store.truncate() returns void
+LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+begin
+truncate table store.t_vehicle_type;
+truncate table store.t_engines;
+truncate table store.t_machines_info;
+truncate table store.t_status;
+truncate table store.t_purchases;
+truncate table store.t_engines;
+truncate table store.t_machines;
+end
+$$;
+
+
+VIEWS
+
+CREATE OR REPLACE VIEW store.v_vehicles_info
+ AS
+ SELECT mi.c_guid,
+   vt.type,
+   m.marque,
+   m.model,
+   e.engine,
+   e.engine_power,
+   mi.c_max_speed,
+   p.cost_usd,
+   p.price,
+   s.status,
+   p.date_purchase,
+   mi.c_date_insert,
+   mi.c_date_update
+ FROM store.t_machines_info mi
+ JOIN store.t_machines m ON m.id = mi.id_machine
+ JOIN store.t_engines e ON e.id = mi.id_engine
+ JOIN store.t_vehicle_type vt ON vt.id = mi.id_vehicle_type
+ JOIN store.t_status s ON s.id = mi.id_status
+ JOIN store.t_purchases p ON p.auto_guid = mi.c_guid;
+
+ CREATE OR REPLACE VIEW store.v_statistic_on_statuses
+ AS
+ SELECT count(id), s.status
+ FROM store.t_machines_info mi
+ JOIN store.t_status s ON s.id = mi.id_status
+ group by s.status;
+ 
+ CREATE OR REPLACE VIEW store.v_statistic_on_types
+ AS
+ SELECT count(id), vt.type
+ FROM store.t_machines_info mi
+ JOIN store.t_vehicle_type vt ON vt.id = mi.id_vehicle_type
+ group by vt.type;
+ 
+ CREATE OR REPLACE VIEW store.v_statistic_on_marques
+ AS
+ SELECT count(id), m.marque
+ FROM store.t_machines_info mi
+ JOIN store.t_machines m ON m.id = mi.id_machine
+ group by m.marque;
+
+CREATE OR REPLACE VIEW store.v_general_statistic
+ AS
+ select type, status, marque from store.v_statistic_on_types t, store.v_statistic_on_statuses s, store.v_statistic_on_marques m
+ order by t.count desc, s.count desc, m.count desc limit 1;
+
+SETUP
+
+insert into store.t_vehicle_type (type) values ('supercar'), ('jet'), ('ship'), ('helicopter');
+insert into store.t_status (status) values ('in stock'), ('sold'), ('reserved');

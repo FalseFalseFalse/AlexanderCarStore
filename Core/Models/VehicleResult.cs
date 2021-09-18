@@ -2,7 +2,7 @@
 
 namespace Core.Models
 {
-    public class VehicleResult : VehicleParams
+    public class VehicleResult : VehicleParamsExtend
     {
         public DateTime DateInsert { get; set; }
         public DateTime DateUpdate { get; set; }
