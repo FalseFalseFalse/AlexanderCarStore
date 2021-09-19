@@ -30,7 +30,7 @@ namespace WebApplication4
 
             services.AddSingleton<IVehicleProcessing, VehicleProcessing>();
             services.AddSingleton<IStatistic, StatisticHandler>();
-            services.AddSingleton(new NpgsqlConnection(Configuration.GetConnectionString("PostgreSql")));        
+            services.AddTransient(_ => new NpgsqlConnection(Configuration.GetConnectionString("PostgreSql")));        
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
