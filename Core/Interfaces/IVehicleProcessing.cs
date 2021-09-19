@@ -9,7 +9,7 @@ namespace Core.Interfaces
         VehicleResult UpdateVehicleInfo(VehicleParamsExtend vehicleParams);
         VehicleResult InsertVehicleInfo(VehicleParams vehicleParams);
         VehicleResult GetRandomReverseVehicleInfo();
-        VehicleResult GetVehicleInfo(Guid guid);
+        VehicleResult GetVehicleInfo(Guid vehicleId);
         IEnumerable<VehicleResult> FindVehicle(FindVehicleParams vehicleParams);
         /// <summary>
         /// Джоб обнуления случайной цены

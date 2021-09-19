@@ -22,10 +22,10 @@ namespace Core.Handlers
             _connection.Close();
         }
 
-        public VehicleResult GetVehicleInfo(Guid guid)
+        public VehicleResult GetVehicleInfo(Guid vehicleId)
         {
             var result = new VehicleResult();
-            var query = $"select * from store.v_vehicles_info where c_guid = '{guid}';";
+            var query = $"select * from store.v_vehicles_info where c_guid = '{vehicleId}';";
             NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
             try
             {
@@ -227,9 +227,8 @@ namespace Core.Handlers
 
         public void NullifyRandomPrice()
         {
-            //var connection = new NpgsqlConnection();
             var query = $"select store.nullify_price();";
-            //NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
+
             NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
             try
             {
