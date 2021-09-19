@@ -2,9 +2,9 @@
 
 namespace Core.Models
 {
-    public class MarqueStatistic
+    public class StatusStatistics
     {
-        public string Marque { get; set; }
+        public string Status { get; set; }
 
         [JsonPropertyName("Count")]
         public int CountType { get; set; }

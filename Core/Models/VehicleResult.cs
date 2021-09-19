@@ -2,11 +2,10 @@
 
 namespace Core.Models
 {
-    public class VehicleResult : VehicleParamsExtend
+    public class VehicleResult : VehicleParamsBase
     {
+        public virtual Guid? Guid { get; set; }
         public DateTime DateInsert { get; set; }
         public DateTime DateUpdate { get; set; }
-        public string ErrorMessage { get; set; }
-        public string ErrorCode { get; set; }
     }
 }

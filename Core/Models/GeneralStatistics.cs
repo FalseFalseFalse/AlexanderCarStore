@@ -1,6 +1,6 @@
 ﻿namespace Core.Models
 {
-    public class GeneralStatistic
+    public class GeneralStatistics
     {
         public string VehicleType { get; set; }
         public string Marque { get; set; }

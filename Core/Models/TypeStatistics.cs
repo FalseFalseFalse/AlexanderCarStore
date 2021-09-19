@@ -2,7 +2,7 @@
 
 namespace Core.Models
 {
-    public class TypeStatistic
+    public class TypeStatistics
     {
         public string VehicleType { get; set; }
 

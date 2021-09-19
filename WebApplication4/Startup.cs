@@ -29,7 +29,7 @@ namespace WebApplication4
             });
 
             services.AddSingleton<IVehicleProcessing, VehicleProcessing>();
-            services.AddSingleton<IStatistic, StatisticHandler>();
+            services.AddSingleton<IStatisticsHandler, StatisticsHandler>();
             services.AddTransient(_ => new NpgsqlConnection(Configuration.GetConnectionString("PostgreSql")));        
         }
 
@@ -39,7 +39,6 @@ namespace WebApplication4
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                //app.UseSwaggerUI(c => c.SwaggerEndpoint("https://localhost:5001/swagger/v1/swagger.json", "Alexander's Car Store v1"));
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("v1/swagger.json", "Alexander's Car Store v1"));
             }
 

@@ -1,15 +1,12 @@
 ﻿using Core.Interfaces;
 using Core.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace WebApplication4.Controllers
 {
-    [ApiController]
-    [Route("[controller]")]
     public class VehicleController : ControllerBase
     {
         private readonly IVehicleProcessing _vehicleProcessing;

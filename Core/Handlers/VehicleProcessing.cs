@@ -1,5 +1,6 @@
 ﻿using Core.Interfaces;
 using Core.Models;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using System;
 using System.Collections.Generic;
@@ -7,19 +8,16 @@ using System.Linq;
 
 namespace Core.Handlers
 {
-    public class VehicleProcessing : IVehicleProcessing, IDisposable
+    public class VehicleProcessing : IVehicleProcessing
     {
         private readonly NpgsqlConnection _connection;
+        private readonly ILogger<VehicleProcessing> _logger;
 
-        public VehicleProcessing(NpgsqlConnection connection)
+        public VehicleProcessing(NpgsqlConnection connection, ILogger<VehicleProcessing>  logger)
         {
             _connection = connection;
             _connection.Open();
-        }
-
-        public void Dispose()
-        {
-            _connection.Close();
+            _logger = logger;
         }
 
         public VehicleResult GetVehicleInfo(Guid vehicleId)
@@ -51,7 +49,7 @@ namespace Core.Handlers
             {
                 if (ex.ToString().Contains("Несуществующий p_guid"))
                 {
-                    result.ErrorMessage = "Данного guid не существует";
+                    _logger.LogInformation("Данного guid не существует");
                 }
                 else
                 {
@@ -92,9 +90,17 @@ namespace Core.Handlers
         {
             var result = new VehicleResult();
 
-            var query = $"select store.set_vehicles_info('{vehicleParams.VehicleType}'::varchar, '{vehicleParams.Marque}'::varchar, '{vehicleParams.Model}'::varchar," +
-                $" '{vehicleParams.Engine}'::varchar, {vehicleParams.EnginePowerBhp}, {vehicleParams.TopSpeedMph}, '{vehicleParams.DatePurchase}'::timestamp, " +
-                $"{vehicleParams.CostUsd}, {vehicleParams.Price}, '{vehicleParams.Status}');";
+            var query = $"select store.set_vehicles_info('" +
+                $"{vehicleParams.VehicleType}'::varchar, " +
+                $"'{vehicleParams.Marque}'::varchar, " +
+                $"'{vehicleParams.Model}'::varchar," +
+                $"'{vehicleParams.Engine}'::varchar, " +
+                $"{vehicleParams.EnginePowerBhp}, " +
+                $"{vehicleParams.TopSpeedMph}, " +
+                $"'{vehicleParams.DatePurchase}'::timestamp, " +
+                $"{vehicleParams.CostUsd}, " +
+                $"{vehicleParams.Price}, " +
+                $"'{vehicleParams.Status}');";
 
             NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
             try
@@ -108,7 +114,7 @@ namespace Core.Handlers
             }
             catch (Exception)
             {
-                Console.WriteLine("Error while inserting");
+                _logger.LogInformation("Error while inserting");
             };
 
             return result;
@@ -118,7 +124,7 @@ namespace Core.Handlers
         {
             var result = new VehicleResult();
             var values = reader.GetFieldValue<object[]>(0);
-            result.Guid = Guid.Parse(values[0].ToString());
+            result.Guid = Guid.Parse(reader[0].ToString());
             result.VehicleType = values[1].ToString();
             result.Marque = values[2].ToString();
             result.Model = values[3].ToString();
@@ -131,17 +137,26 @@ namespace Core.Handlers
             result.DateInsert = (DateTime)values[10];
             result.DateUpdate = (DateTime)values[11];
             result.DatePurchase = (DateTime)values[12];
+         
 
             return result;
         }
-
         public VehicleResult UpdateVehicleInfo(VehicleParamsExtend vehicleParams)
         {
             var result = new VehicleResult();
 
-            var query = $"select store.set_vehicles_info('{vehicleParams.VehicleType}'::varchar, '{vehicleParams.Marque}'::varchar, '{vehicleParams.Model}'::varchar," +
-                $" '{vehicleParams.Engine}'::varchar, {vehicleParams.EnginePowerBhp}, {vehicleParams.TopSpeedMph}, '{vehicleParams.DatePurchase}'::timestamp, " +
-                $"{vehicleParams.CostUsd}, {vehicleParams.Price}, '{vehicleParams.Status}'" + (vehicleParams.Guid.HasValue ? $", '{vehicleParams.Guid}'::uuid);" : ");");
+            var query = $"select store.set_vehicles_info('" +
+                $"{vehicleParams.VehicleType}'::varchar, " +
+                $"'{vehicleParams.Marque}'::varchar, " +
+                $"'{vehicleParams.Model}'::varchar," +
+                $"'{vehicleParams.Engine}'::varchar, " +
+                $"{vehicleParams.EnginePowerBhp}, " +
+                $"{vehicleParams.TopSpeedMph}, " +
+                $"'{vehicleParams.DatePurchase}'::timestamp, " +
+                $"{vehicleParams.CostUsd}, " +
+                $"{vehicleParams.Price}, " +
+                $"'{vehicleParams.Status}'" + 
+                (vehicleParams.Guid.HasValue ? $", '{vehicleParams.Guid}'::uuid);" : ");");
 
             NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
             try
@@ -157,7 +172,7 @@ namespace Core.Handlers
             {
                 if (ex.ToString().Contains("Несуществующий p_guid"))
                 {
-                    result.ErrorMessage = "Данного guid не существует";
+                    _logger.LogInformation("This guid doesn't exist");
                 }
                 else
                 {
@@ -178,14 +193,40 @@ namespace Core.Handlers
         {
             var result = new List<VehicleResult>();
 
+            if (vehicleParams.Marque == null || 
+                vehicleParams.VehicleType == null ||
+                vehicleParams.Model == null ||
+                vehicleParams.Status == null ||
+                vehicleParams.Engine == null)
+            {
+                throw new Exception("There is no params for filter");
+            }
+
             var query = $"select * from store.v_vehicles_info {GenerateQueryForFind(vehicleParams)};";
             NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
             using var reader = myCommand.ExecuteReader();
 
             while (reader.Read())
             {
-                result.Add(GetResultFromReader(reader));
+                result.Add(new VehicleResult
+                {
+                    Guid = Guid.Parse(reader[0].ToString()),
+                    VehicleType = reader[1].ToString(),
+                    Marque = reader[2].ToString(),
+                    Model = reader[3].ToString(),
+                    Engine = reader[4].ToString(),
+                    EnginePowerBhp = (int)reader[5],
+                    TopSpeedMph = (int)reader[6],
+                    CostUsd = (decimal)reader[7],
+                    Price = (decimal)reader[8],
+                    Status = reader[9].ToString(),
+                    DateInsert = (DateTime)reader[10],
+                    DateUpdate = (DateTime)reader[11],
+                    DatePurchase = (DateTime)reader[12]
+                });
+                
             }
+
             return result;
         }
 
@@ -212,6 +253,7 @@ namespace Core.Handlers
             {
                 result += AddFilter(result, "type", vehicleParams.VehicleType.ToLower());
             }
+
             return result;
         }
 
@@ -238,9 +280,6 @@ namespace Core.Handlers
             {
                 Console.WriteLine("Error while doing some jobs");
             }
-
         }
-
-
     }
 }

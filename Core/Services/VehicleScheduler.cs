@@ -7,7 +7,7 @@ namespace Core.Services
     {
         public static void Start(IVehicleProcessing vehicleProcessing)
         {
-            SchedulerService.Instance.ScheduleTask(System.DateTime.Now, TimeSpan.FromSeconds(30), vehicleProcessing.NullifyRandomPrice);
+            SchedulerService.Instance.ScheduleTask(DateTime.Now, TimeSpan.FromSeconds(30), vehicleProcessing.NullifyRandomPrice);
         }
     }
 }
