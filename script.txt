@@ -1,4 +1,15 @@
-TABLES
+CREATE DATABASE alexandrstore
+    WITH 
+    OWNER = postgres
+    ENCODING = 'UTF8'
+    LC_COLLATE = 'Russian_Russia.1251'
+    LC_CTYPE = 'Russian_Russia.1251'
+    TABLESPACE = pg_default
+    CONNECTION LIMIT = -1;
+
+CREATE SCHEMA store;
+
+--TABLES
 
 CREATE TABLE store.t_engines
 (
@@ -54,7 +65,7 @@ CREATE TABLE store.t_purchases
     CONSTRAINT t_purchases_pkey PRIMARY KEY (id)
 );
 
-FUNCTIONS
+--FUNCTIONS
 
 create or replace function store.nullify_price() returns void
 LANGUAGE plpgsql SECURITY DEFINER
@@ -214,7 +225,7 @@ end
 $$;
 
 
-VIEWS
+--VIEWS
 
 CREATE OR REPLACE VIEW store.v_vehicles_info
  AS
@@ -264,7 +275,7 @@ CREATE OR REPLACE VIEW store.v_general_statistic
  select type, status, marque from store.v_statistic_on_types t, store.v_statistic_on_statuses s, store.v_statistic_on_marques m
  order by t.count desc, s.count desc, m.count desc limit 1;
 
-SETUP
+--SETUP
 
 insert into store.t_vehicle_type (type) values ('supercar'), ('jet'), ('ship'), ('helicopter');
 insert into store.t_status (status) values ('in stock'), ('sold'), ('reserved');
