@@ -124,7 +124,7 @@ namespace Core.Handlers
         {
             var result = new VehicleResult();
             var values = reader.GetFieldValue<object[]>(0);
-            result.Guid = Guid.Parse(reader[0].ToString());
+            result.Guid = Guid.Parse(values[0].ToString());
             result.VehicleType = values[1].ToString();
             result.Marque = values[2].ToString();
             result.Model = values[3].ToString();
@@ -193,10 +193,10 @@ namespace Core.Handlers
         {
             var result = new List<VehicleResult>();
 
-            if (vehicleParams.Marque == null || 
-                vehicleParams.VehicleType == null ||
-                vehicleParams.Model == null ||
-                vehicleParams.Status == null ||
+            if (vehicleParams.Marque == null && 
+                vehicleParams.VehicleType == null &&
+                vehicleParams.Model == null &&
+                vehicleParams.Status == null &&
                 vehicleParams.Engine == null)
             {
                 throw new Exception("There is no params for filter");
