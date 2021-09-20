@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Core.Handlers
@@ -23,7 +24,7 @@ namespace Core.Handlers
         public VehicleResult GetVehicleInfo(Guid vehicleId)
         {
             var result = new VehicleResult();
-            var query = $"select * from store.v_vehicles_info where c_guid = '{vehicleId}';";
+            var query = $"select * from store.v_vehicles_info where guid = '{vehicleId}';";
             NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
             try
             {
@@ -42,7 +43,7 @@ namespace Core.Handlers
                     result.Status = reader[9].ToString();
                     result.DatePurchase = (DateTime)reader[10];
                     result.DateInsert = (DateTime)reader[11];
-                    result.DateUpdate = (DateTime)reader[12];
+                    result.DateUpdate = reader[12].GetType().FullName == "System.DBNull" ? null : (DateTime)reader[12];
                 }
             }
             catch (Exception ex)
@@ -80,7 +81,7 @@ namespace Core.Handlers
                 result.Status = Reverse(reader[9].ToString());
                 result.DatePurchase = (DateTime)reader[10];
                 result.DateInsert = (DateTime)reader[11];
-                result.DateUpdate = (DateTime)reader[12];
+                result.DateUpdate = reader[12].GetType().FullName == "System.DBNull" ? null : (DateTime)reader[12];
             }
 
             return result;
@@ -89,18 +90,17 @@ namespace Core.Handlers
         public VehicleResult InsertVehicleInfo(VehicleParams vehicleParams)
         {
             var result = new VehicleResult();
-
-            var query = $"select store.set_vehicles_info('" +
-                $"{vehicleParams.VehicleType}'::varchar, " +
-                $"'{vehicleParams.Marque}'::varchar, " +
-                $"'{vehicleParams.Model}'::varchar," +
-                $"'{vehicleParams.Engine}'::varchar, " +
-                $"{vehicleParams.EnginePowerBhp}, " +
-                $"{vehicleParams.TopSpeedMph}, " +
-                $"'{vehicleParams.DatePurchase}'::timestamp, " +
-                $"{vehicleParams.CostUsd}, " +
-                $"{vehicleParams.Price}, " +
-                $"'{vehicleParams.Status}');";
+            var query = $"set datestyle = 'MDY';select store.set_vehicles_info('" +
+                        $"{vehicleParams.VehicleType}'::varchar, " +
+                        $"'{vehicleParams.Marque}'::varchar, " +
+                        $"'{vehicleParams.Model}'::varchar," +
+                        $"'{vehicleParams.Engine}'::varchar, " +
+                        $"{vehicleParams.EnginePowerBhp}, " +
+                        $"{vehicleParams.TopSpeedMph}, " +
+                        $"'{vehicleParams.DatePurchase}'::timestamp without time zone, " +
+                        $"{vehicleParams.CostUsd}, " +
+                        $"{vehicleParams.Price}, " +
+                        $"'{vehicleParams.Status}');";
 
             NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
             try
@@ -220,9 +220,10 @@ namespace Core.Handlers
                     CostUsd = (decimal)reader[7],
                     Price = (decimal)reader[8],
                     Status = reader[9].ToString(),
-                    DateInsert = (DateTime)reader[10],
-                    DateUpdate = (DateTime)reader[11],
-                    DatePurchase = (DateTime)reader[12]
+                    DatePurchase = (DateTime)reader[10],
+                    DateInsert = (DateTime)reader[11],
+                    DateUpdate = reader[12].GetType().FullName == "System.DBNull" ? null : (DateTime)reader[11],
+                    
                 });
                 
             }

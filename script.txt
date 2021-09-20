@@ -1,14 +1,41 @@
-CREATE DATABASE alexandrstore
-    WITH 
-    OWNER = postgres
-    ENCODING = 'UTF8'
-    LC_COLLATE = 'Russian_Russia.1251'
-    LC_CTYPE = 'Russian_Russia.1251'
-    TABLESPACE = pg_default
-    CONNECTION LIMIT = -1;
-
 CREATE SCHEMA store;
 
+CREATE EXTENSION "uuid-ossp";
+
+CREATE SEQUENCE store.t_engines_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 2147483647
+    CACHE 1;
+
+CREATE SEQUENCE store.t_machines_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 2147483647
+    CACHE 1;
+
+CREATE SEQUENCE store.t_purchases_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 2147483647
+    CACHE 1;
+
+CREATE SEQUENCE store.t_status_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 2147483647
+    CACHE 1;
+
+CREATE SEQUENCE store.t_vehicle_type_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 2147483647
+    CACHE 1;
 --TABLES
 
 CREATE TABLE store.t_engines
@@ -159,11 +186,11 @@ create or replace function store.set_vehicles_info(
     p_model varchar, 
     p_engine varchar, 
     p_engine_power int,
-  p_top_speed int, 
-    p_date_purchase timestamp, 
+    p_top_speed int, 
+    p_date_purchase timestamp without time zone, 
     p_cost_usd numeric, 
     p_price numeric,
-  p_status varchar, 
+    p_status varchar, 
     p_guid uuid default null)
 returns record
 LANGUAGE plpgsql SECURITY DEFINER
@@ -185,27 +212,27 @@ begin
   select _id, _marque, _model into _marque_info from store.set_machine(p_marque, p_model);
 
   if p_guid is null then
-    insert into store.t_machines_info(c_guid, id_machine, c_max_speed, id_engine, id_vehicle_type, id_status, c_date_insert, c_date_update)
+    insert into store.t_machines_info(guid, id_machine, max_speed, id_engine, id_vehicle_type, id_status, date_insert, date_update)
         values (uuid_generate_v4(), _marque_info._id, p_top_speed, _engine_info._id, _vehicle_info._id, _status_info._id, now(), null) 
-    returning store.t_machines_info.c_guid, store.t_machines_info.c_date_insert into _guid, _date_insert;
+    returning store.t_machines_info.guid, store.t_machines_info.date_insert into _guid, _date_insert;
   else
-        if not exists (select 1 from store.t_machines_info mi where mi.c_guid = p_guid) then
+        if not exists (select 1 from store.t_machines_info mi where mi.guid = p_guid) then
         RAISE EXCEPTION 'Несуществующий p_guid --> %', p_guid
       USING HINT = 'Проверьте вводимые данные';
         else
-      update store.t_machines_info mi set id_machine = _marque_info._id, c_max_speed = p_top_speed, id_engine = _engine_info._id, 
-      id_vehicle_type = _vehicle_info._id, id_status = _status_info._id, c_date_update = now() where mi.c_guid = p_guid 
-      returning mi.c_guid, mi.c_date_insert, mi.c_date_update into _guid, _date_insert, _date_update;
+      update store.t_machines_info mi set id_machine = _marque_info._id, max_speed = p_top_speed, id_engine = _engine_info._id, 
+      id_vehicle_type = _vehicle_info._id, id_status = _status_info._id, date_update = now() where mi.guid = p_guid 
+      returning mi.guid, mi.date_insert, mi.date_update into _guid, _date_insert, _date_update;
         end if;
   end if;
   
   select _cost_usd, _price, _date_purchase into _purchase_info 
   from store.set_purchase(_guid, coalesce(p_cost_usd, 0), coalesce(p_price, 0), p_date_purchase);
   
-  select _guid::uuid as c_guid, _vehicle_info._vehicle_type::varchar as c_vehicle_type, _marque_info._marque::varchar as c_marque,
-    _marque_info._model as c_model, _engine_info._engine as c_engine, _engine_info._engine_power as c_engine_power,
-    p_top_speed as c_top_speed, _purchase_info._cost_usd as c_cost_usd, _purchase_info._price as c_price, _status_info._status as c_status,
-      _date_insert as c_date_insert, coalesce(_date_update, now()) as c_date_update, _purchase_info._date_purchase as c_date_purchase into _result;
+  select _guid::uuid as guid, _vehicle_info._vehicle_type::varchar as vehicle_type, _marque_info._marque::varchar as marque,
+    _marque_info._model as model, _engine_info._engine as engine, _engine_info._engine_power as engine_power,
+    p_top_speed as top_speed, _purchase_info._cost_usd as cost_usd, _purchase_info._price as price, _status_info._status as status,
+    _date_insert as date_insert, coalesce(_date_update, now()) as date_update, _purchase_info._date_purchase as date_purchase into _result;
   return _result;
 end;
 $$;
@@ -229,25 +256,25 @@ $$;
 
 CREATE OR REPLACE VIEW store.v_vehicles_info
  AS
- SELECT mi.c_guid,
+ SELECT mi.guid,
    vt.type,
    m.marque,
    m.model,
    e.engine,
    e.engine_power,
-   mi.c_max_speed,
+   mi.max_speed,
    p.cost_usd,
    p.price,
    s.status,
    p.date_purchase,
-   mi.c_date_insert,
-   mi.c_date_update
+   mi.date_insert,
+   mi.date_update
  FROM store.t_machines_info mi
  JOIN store.t_machines m ON m.id = mi.id_machine
  JOIN store.t_engines e ON e.id = mi.id_engine
  JOIN store.t_vehicle_type vt ON vt.id = mi.id_vehicle_type
  JOIN store.t_status s ON s.id = mi.id_status
- JOIN store.t_purchases p ON p.auto_guid = mi.c_guid;
+ JOIN store.t_purchases p ON p.auto_guid = mi.guid;
 
  CREATE OR REPLACE VIEW store.v_statistic_on_statuses
  AS

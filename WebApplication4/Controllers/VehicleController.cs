@@ -1,11 +1,11 @@
-﻿using Core.Interfaces;
-using Core.Models;
-using Microsoft.AspNetCore.Mvc;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Core.Interfaces;
+using Core.Models;
+using Microsoft.AspNetCore.Mvc;
 
-namespace WebApplication4.Controllers
+namespace Contoller.Controllers
 {
     public class VehicleController : ControllerBase
     {
