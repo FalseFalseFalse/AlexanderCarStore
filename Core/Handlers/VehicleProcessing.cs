@@ -90,8 +90,7 @@ namespace Core.Handlers
         public VehicleResult InsertVehicleInfo(VehicleParams vehicleParams)
         {
             var result = new VehicleResult();
-            //var query = $"set datestyle = 'MDY';select store.set_vehicles_info('" +
-            var query = $"set datestyle = 'DMY';select store.set_vehicles_info('" +
+            var query = $"set datestyle = 'MDY';select store.set_vehicles_info('" +
                         $"{vehicleParams.VehicleType}'::varchar, " +
                         $"'{vehicleParams.Marque}'::varchar, " +
                         $"'{vehicleParams.Model}'::varchar," +
@@ -141,7 +140,6 @@ namespace Core.Handlers
             result.DatePurchase = (DateTime)values[12];
             return result;
         }
-        
         public VehicleResult UpdateVehicleInfo(VehicleParamsExtend vehicleParams)
         {
             var result = new VehicleResult();
@@ -223,12 +221,10 @@ namespace Core.Handlers
                     Status = reader[9].ToString(),
                     DatePurchase = (DateTime)reader[10],
                     DateInsert = (DateTime)reader[11],
-                    DateUpdate = reader[12].GetType().FullName == "System.DBNull" ? null : (DateTime)reader[11],
-                    
+                    DateUpdate = reader[12].GetType().FullName == "System.DBNull" ? null : (DateTime)reader[12]
                 });
-                
             }
-
+            
             return result;
         }
 

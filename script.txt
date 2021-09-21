@@ -102,7 +102,7 @@ declare
   _guid uuid;
 begin
  select auto_guid into _guid from store.t_purchases where price <> 0 order by random() limit 1;
- update store.t_purchases set c_price = 0 where auto_guid = _guid;
+ update store.t_purchases set price = 0 where auto_guid = _guid;
 end
 $$;
 
