@@ -90,7 +90,8 @@ namespace Core.Handlers
         public VehicleResult InsertVehicleInfo(VehicleParams vehicleParams)
         {
             var result = new VehicleResult();
-            var query = $"set datestyle = 'MDY';select store.set_vehicles_info('" +
+            //var query = $"set datestyle = 'MDY';select store.set_vehicles_info('" +
+            var query = $"set datestyle = 'DMY';select store.set_vehicles_info('" +
                         $"{vehicleParams.VehicleType}'::varchar, " +
                         $"'{vehicleParams.Marque}'::varchar, " +
                         $"'{vehicleParams.Model}'::varchar," +
@@ -114,6 +115,7 @@ namespace Core.Handlers
             }
             catch (Exception)
             {
+                throw;
                 _logger.LogInformation("Error while inserting");
             };
 
