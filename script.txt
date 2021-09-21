@@ -36,6 +36,7 @@ CREATE SEQUENCE store.t_vehicle_type_id_seq
     MINVALUE 1
     MAXVALUE 2147483647
     CACHE 1;
+
 --TABLES
 
 CREATE TABLE store.t_engines
