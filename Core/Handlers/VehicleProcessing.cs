@@ -137,10 +137,9 @@ namespace Core.Handlers
             result.DateInsert = (DateTime)values[10];
             result.DateUpdate = (DateTime)values[11];
             result.DatePurchase = (DateTime)values[12];
-         
-
             return result;
         }
+        
         public VehicleResult UpdateVehicleInfo(VehicleParamsExtend vehicleParams)
         {
             var result = new VehicleResult();
