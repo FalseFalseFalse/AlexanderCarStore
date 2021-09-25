@@ -97,7 +97,7 @@ namespace Core.Handlers
                         $"'{vehicleParams.Engine}'::varchar, " +
                         $"{vehicleParams.EnginePowerBhp}, " +
                         $"{vehicleParams.TopSpeedMph}, " +
-                        $"'{vehicleParams.DatePurchase}'::timestamp without time zone, " +
+                        $"'{vehicleParams.DatePurchase:O}'::timestamp, " +
                         $"{vehicleParams.CostUsd}, " +
                         $"{vehicleParams.Price}, " +
                         $"'{vehicleParams.Status}');";
@@ -114,8 +114,8 @@ namespace Core.Handlers
             }
             catch (Exception)
             {
-                throw;
                 _logger.LogInformation("Error while inserting");
+                throw;
             };
 
             return result;
@@ -151,7 +151,7 @@ namespace Core.Handlers
                 $"'{vehicleParams.Engine}'::varchar, " +
                 $"{vehicleParams.EnginePowerBhp}, " +
                 $"{vehicleParams.TopSpeedMph}, " +
-                $"'{vehicleParams.DatePurchase}'::timestamp, " +
+                $"'{vehicleParams.DatePurchase:O}'::timestamp, " +
                 $"{vehicleParams.CostUsd}, " +
                 $"{vehicleParams.Price}, " +
                 $"'{vehicleParams.Status}'" + 
@@ -230,7 +230,7 @@ namespace Core.Handlers
 
         private string GenerateQueryForFind(FindVehicleParams vehicleParams)
         {
-            string result = "";
+            var result = "";
             if (!string.IsNullOrEmpty(vehicleParams.Engine))
             {
                 result += AddFilter(result, "engine", vehicleParams.Engine.ToLower());
@@ -257,19 +257,14 @@ namespace Core.Handlers
 
         private string AddFilter(string query, string filter, string value)
         {
-            if (query != "")
-            {
-                return $" and {filter} ilike '{value}'";
-            }
-            else
-                return $" where {filter} ilike '{value}'";
+            return query != "" ? $" and {filter} ilike '{value}'" : $" where {filter} ilike '{value}'";
         }
 
         public void NullifyRandomPrice()
         {
             var query = $"select store.nullify_price();";
 
-            NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
+            var myCommand = new NpgsqlCommand(query, _connection);
             try
             {
                 myCommand.ExecuteNonQuery();
