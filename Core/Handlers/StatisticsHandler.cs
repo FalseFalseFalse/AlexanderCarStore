@@ -22,7 +22,7 @@ namespace Core.Handlers
         {
             var result = new List<MarqueStatistics>();
 
-            NpgsqlCommand myCommand = new NpgsqlCommand(GetStatisticsOnMarquesQuery, _connection);
+            var myCommand = new NpgsqlCommand(GetStatisticsOnMarquesQuery, _connection);
             using var reader = myCommand.ExecuteReader();
 
             while (reader.Read())
@@ -60,7 +60,7 @@ namespace Core.Handlers
         {
             var result = new List<TypeStatistics>();
 
-            NpgsqlCommand myCommand = new NpgsqlCommand(GetStatisticsOnTypesQuery, _connection);
+            var myCommand = new NpgsqlCommand(GetStatisticsOnTypesQuery, _connection);
             using var reader = myCommand.ExecuteReader();
 
             while (reader.Read())
@@ -79,7 +79,7 @@ namespace Core.Handlers
         {
             var result = new GeneralStatistics();
 
-            NpgsqlCommand myCommand = new NpgsqlCommand(GetGeneralStatisticsQuery, _connection);
+            var myCommand = new NpgsqlCommand(GetGeneralStatisticsQuery, _connection);
             using var reader = myCommand.ExecuteReader();
 
             if (reader.Read())

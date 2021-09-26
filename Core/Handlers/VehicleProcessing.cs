@@ -25,7 +25,7 @@ namespace Core.Handlers
         {
             var result = new VehicleResult();
             var query = $"select * from store.v_vehicles_info where guid = '{vehicleId}';";
-            NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
+            var myCommand = new NpgsqlCommand(query, _connection);
             try
             {
                 using var reader = myCommand.ExecuteReader();
@@ -90,7 +90,7 @@ namespace Core.Handlers
         public VehicleResult InsertVehicleInfo(VehicleParams vehicleParams)
         {
             var result = new VehicleResult();
-            var query = $"set datestyle = 'MDY';select store.set_vehicles_info('" +
+            var query = $"select store.set_vehicles_info('" +
                         $"{vehicleParams.VehicleType}'::varchar, " +
                         $"'{vehicleParams.Marque}'::varchar, " +
                         $"'{vehicleParams.Model}'::varchar," +
@@ -102,7 +102,7 @@ namespace Core.Handlers
                         $"{vehicleParams.Price}, " +
                         $"'{vehicleParams.Status}');";
 
-            NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
+            var myCommand = new NpgsqlCommand(query, _connection);
             try
             {
                 using var reader = myCommand.ExecuteReader();
@@ -157,7 +157,7 @@ namespace Core.Handlers
                 $"'{vehicleParams.Status}'" + 
                 (vehicleParams.Guid.HasValue ? $", '{vehicleParams.Guid}'::uuid);" : ");");
 
-            NpgsqlCommand myCommand = new NpgsqlCommand(query, _connection);
+            var myCommand = new NpgsqlCommand(query, _connection);
             try
             {
                 using var reader = myCommand.ExecuteReader();
